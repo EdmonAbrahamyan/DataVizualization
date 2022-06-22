@@ -8,6 +8,7 @@ colors = {
     'text': '#7FDBFF'
 }
 
+
 def calcuate_points(data):
     df_rank = data.groupby(['Country', 'Year', 'Team 1'], as_index=False)['Team 1 (pts)'].sum().merge(
         data.groupby(['Country', 'Year', 'Team 2'], as_index=False)['Team 2 (pts)'].sum(),
@@ -20,9 +21,11 @@ def calcuate_points(data):
     df_rank.sort_values(by=['Country', 'Year', 'Pts'], ascending=False, inplace=True)
     return df_rank
 
+
 data = pd.read_csv('Data/BIG FIVE 1995-2019.csv')
 data = calcuate_points(data)
 app = Dash(__name__)
+
 
 @app.callback(
     Output('league_table', 'children'),
@@ -41,6 +44,7 @@ def generate_table(country='GER', year=2019):
         ])
     ], id='league_table')
 
+
 app.layout = html.Div(style={'backgroundColor': '#11111'}, children=[
 
     html.H1(children='Top Five League',
@@ -55,7 +59,6 @@ app.layout = html.Div(style={'backgroundColor': '#11111'}, children=[
 
     generate_table()
 ])
-
 
 if __name__ == '__main__':
     app.run_server(port='8052', debug=True)
