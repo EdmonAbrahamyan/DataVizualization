@@ -2,6 +2,7 @@ from dash import dcc, Dash
 from dash import html
 from dash.dependencies import Input, Output
 import pandas as pd
+import plotly.express as px
 
 colors = {
     'background': '#111111',
@@ -28,6 +29,25 @@ app = Dash(__name__)
 
 
 @app.callback(
+    Output("graph", "figure"),
+    Input("select_country", "value"))
+def update_bar_chart(country='GER'):
+    df_rank_new = data.groupby(['Year', 'Country'])[['Team', 'Pts']].max('Pts')
+    df_rank_new['Winner'] = 1
+
+    final_data = data.merge(df_rank_new, how='left', on=['Year', 'Country', 'Pts'])
+    final_data['Winner'] = final_data['Winner'].fillna(0)
+
+    winners = final_data[final_data.Winner == 1].groupby(['Country', 'Team']).count().reset_index()
+    winners = winners[['Country', 'Team', 'Winner']]
+
+    df = winners
+    mask = df["Country"] == country
+    fig = px.bar(df[mask], x="Team", y="Winner")
+    return fig
+
+
+@app.callback(
     Output('league_table', 'children'),
     Input('select_country', 'value'),
     Input('select_year', 'value'))
@@ -45,19 +65,28 @@ def generate_table(country='GER', year=2019):
     ], id='league_table')
 
 
-app.layout = html.Div(style={'backgroundColor': '#11111'}, children=[
+app.layout = html.Div(style={'backgroundColor': '#11111',
+                             'display' : 'flex',
+                             'flexDirection' : 'row'}, children=[
+    html.Div(children=[
+        html.H1(children='Top Five League',
+                style={'textAlign': 'center',
+                       'color': '#111111'}),
+        html.Div([
+            "Choose country",
+            dcc.Dropdown(data.Country.unique(), 'ENG', id='select_country'),
+            "Choose year",
+            dcc.Dropdown(data.Year.unique(), 2019, id='select_year'),
+        ], ),
 
-    html.H1(children='Top Five League',
-            style={'textAlign': 'center',
-                   'color': '#111111'}),
+        generate_table(),
+    ]),
+
     html.Div([
-        "Choose country",
-        dcc.Dropdown(data.Country.unique(), 'ENG', id='select_country'),
-        "Choose year",
-        dcc.Dropdown(data.Year.unique(), 2019, id='select_year'),
-    ], style={'width': '25%', 'display': 'inline-block'}),
-
-    generate_table()
+        html.H2('Winners', style={'textAlign': 'center',
+                                  'color': '#111111'}),
+        dcc.Graph(id="graph"),
+    ], style={'width': '75%'})
 ])
 
 if __name__ == '__main__':
